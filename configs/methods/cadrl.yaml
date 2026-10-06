@@ -1,0 +1,29 @@
+# CADRL (Chen et al., 2017), as `python -m robotsnap train --config cadrl`.
+#
+# A method is more than a learner: it brings its own observation, action set,
+# reward and policy, so only the options that really reach the CADRL task are
+# listed here. `robotsnap.models.cadrl` is the reference for the rest.
+#
+# The keys below are `train` options that the method run reads. The spaces the
+# action set is sampled at, `max_neighbours`, the value learner's own constants
+# (`hidden`, `gamma`, `learning_rate`, `batch_size`, `buffer_size`,
+# `epsilon_decay`, `target_update`) and the social cost's weights
+# (`progress_weight`, `collision_penalty`, `goal_bonus`, `time_penalty`,
+# `comfort_distance`, `personal_space_weight`, `too_close_distance`,
+# `too_close_penalty`) all travel through `robotsnap.models.social` and have no
+# `train` flag of their own - so they cannot be set from this file. The
+# environment's `goal_reward`, `progress_reward`, `collision_penalty`,
+# `out_of_bounds_penalty` and `time_penalty` are ignored by CADRL as well: its
+# hand-written social cost replaces the base reward.
+method: cadrl
+episodes: 500
+max_steps: 400
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0
+lidar_bins: 48
+goal_radius: 0.5
+collision_distance: 0.25
+max_linear: 1.0
+max_angular: 1.0

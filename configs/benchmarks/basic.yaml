@@ -1,0 +1,11 @@
+name: basic
+description: Les scenarios de base de la navigation sociale.
+scenarios:
+  - front_approach
+  - door_passing
+  - intersection
+  - circle_crowd
+  - perpendicular_traffic
+  - corner
+  - crowd
+episodes_per_scenario: 5

@@ -1,0 +1,24 @@
+# DQN (Mnih et al., 2015): the value-based baseline over a discrete command set.
+#
+# Defaults for `python -m robotsnap train --config dqn`. Value-based, so there
+# is no entropy bonus and no `ent_coef`: `--entropy` is accepted by the command
+# line but ignored by this algorithm. `train` gives DQN a finite command set
+# (see `robotsnap.rl.sb3.DISCRETE_COMMANDS`), and a replay buffer, a delayed
+# target network and a warm-up phase are what the run needs to learn on it.
+algo: dqn
+timesteps: 100000
+gamma: 0.99
+lr: 1.0e-3
+hidden: 64
+policy_kwargs:
+  net_arch: [64, 64]
+algo_kwargs:
+  buffer_size: 100000
+  learning_starts: 1000
+  batch_size: 64
+  train_freq: 4
+  target_update_interval: 1000
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0

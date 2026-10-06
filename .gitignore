@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual environments (the legacy 9 GB prediction env stays on disk, untracked)
+venv_robotSNAP/
+legacy/human_traj_prediction/env/
+
+# Large local artefacts (kept on disk, not versioned)
+*.pt
+*.pth
+*.onnx
+*.onnx.data
+cadrl.zip
+
+# Datasets (kept on disk, not versioned)
+legacy/human_traj_prediction/data/eth_ucy/
+legacy/human_traj_prediction/data/european/
+
+# Vendored reference repository with its own .git
+legacy/human_traj_prediction/Trajectron-plus-plus/
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

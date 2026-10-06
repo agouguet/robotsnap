@@ -1,0 +1,565 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  RobotSNAP -- paper skeleton
+%
+%  Target : Journal of Intelligent & Robotic Systems (Springer, journal 10846)
+%           Topical Collection "Embodied Intelligence and Human-Centered
+%           Adaptation in Autonomous Systems"  (collection hgfjccegje)
+%           Submission deadline: 31 October 2026
+%
+%  Frame  : the collection invites "digital twin technologies for simulation
+%           and validation". We claim pipeline and timing compatibility with a
+%           real robot stack, NOT real-robot validation. Every claim below is
+%           paired with the experiment that would falsify it (Table 4).
+%
+%  Build  : put the official Springer Nature LaTeX package in ./template/ so
+%           that template/sn-jnl.cls resolves, then
+%               pdflatex main
+%               bibtex   main
+%               pdflatex main
+%               pdflatex main
+%           (glossaries is loaded but unused; if you ever use it, add
+%            \makeglossaries and run makeglossaries between the passes.)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[pdflatex,sn-mathphys-num]{template/sn-jnl}% Math and Physical Sciences Numbered Reference Style
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{xcolor}%
+\usepackage{hyperref}%   (the base template declared it twice; once is enough)
+\usepackage[xindy,acronyms,symbols]{glossaries}
+\usepackage[counterclockwise, figuresright]{rotating}
+\usepackage{tikz}
+\usepackage{forest}
+\usetikzlibrary{trees,positioning,shapes,shadows,arrows.meta}
+\usetikzlibrary{arrows,patterns}
+\usepackage{colortbl}
+
+% --- skeleton helpers: delete before submission ------------------------------
+\newcommand{\tbd}[1][TBD]{\textcolor{red}{#1}}
+\newcommand{\ph}[1]{\textcolor{red}{\langle #1\rangle}}
+\newcommand{\note}[1]{\textcolor{blue}{\footnotesize[#1]}}
+
+% --- notation ---------------------------------------------------------------
+\newcommand{\simstep}{\ensuremath{\Delta t}}
+\newcommand{\ros}{\textsc{ros}\,2}
+
+\begin{document}
+
+\title[RobotSNAP: Robot Social Navigation Assessment Platform]{RobotSNAP: Robot Social Navigation Assessment Platform}
+% Alternative titles that say "digital twin" and "validation" out loud, which
+% is the wording the collection uses. Pick one before submission.
+%   \title[RobotSNAP: A ROS 2 Digital Twin for Human-Centered Navigation Assessment]{...}
+%   \title[Assessing Human-Centered Social Navigation in a Robot-Interface-Coupled Digital Twin]{...}
+
+% The line below is copied verbatim from the base template. The official
+% Springer Nature form is \author*[1]{...} (no backslash before the star); keep
+% whichever your local sn-jnl.cls accepts.
+\author\*[1]{\fnm{First} \sur{Author}}\email{author@example.com}
+\affil\*[1]{\orgdiv{Department of Robotics}, \orgname{University Name}, \orgaddress{\city{City}, \country{Country}}}
+
+\abstract{
+Deciding whether a navigation policy is genuinely human-centered takes more
+than a success rate. It takes scenarios that can be authored, replayed and
+shared; human models whose fidelity is declared rather than assumed; metrics
+whose sensitivity to that fidelity is known; and an interface a real robotic
+stack can connect to without being rewritten. In practice these four
+requirements are met by four different tools, and results are therefore hard to
+compare and hard to reproduce. We present RobotSNAP, an assessment platform
+that unifies them behind a single contract. RobotSNAP is a Unity digital twin
+that exposes a fixed surface of ten topics carrying standard ROS message types,
+published by a peer that is deliberately unaware of who is listening. The same
+scenario file, the same seed and the same policy run either on a \ros{} graph
+through \texttt{ros\_tcp\_endpoint}, or on a dependency-free Python transport
+that speaks the identical wire protocol. We make three falsifiable claims.
+(i) \emph{Cross-transport equivalence}: for a given scenario and seed, both
+transports yield the same trajectories and the same metric values within
+\ph{tolerance}. (ii) \emph{Stack reuse}: a third-party navigation stack
+(\ph{name, version, source}) runs unmodified against the simulator, and the
+measured control-loop budget of \ph{X}\,ms supports rates up to \ph{Y}\,Hz.
+(iii) \emph{Human-model sensitivity}: replacing the crowd model with
+\ph{dataset}-calibrated trajectories changes the ranking of \ph{K} policies
+for \ph{metric}, so conclusions drawn from a synthetic crowd are not
+transferable without declaring the human model. We report \ph{N} episodes over
+\ph{M} scenario families and release the scenarios, the seeds, the containers
+and the analysis scripts. RobotSNAP is positioned as a digital twin for
+simulation and validation: kinematic and perceptual transfer to physical
+hardware is out of scope and is stated as such.
+}
+
+\keywords{Human-aware navigation; Social robot navigation; Benchmarking and
+reproducibility; Digital twins for robotics; ROS 2; Simulation validation;
+Multi-agent simulation; Robot assessment platforms}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+\label{sec:intro}
+
+% One paragraph of context, one paragraph of problem, one of gap, then the
+% contribution list. Aim: a reader who stops after page 2 must know exactly
+% what is claimed and what is not.
+
+\subsection{Human-centered navigation needs evidence, not demonstrations}
+\label{sec:intro:motive}
+% Why social navigation is judged badly today: videos, cherry-picked runs,
+% incomparable metric definitions, undeclared crowd models. Cite the metric
+% critique line of work.
+
+\subsection{The four requirements nobody meets at once}
+\label{sec:intro:gap}
+% 1. authorable + replayable scenarios (incl. real floor plans)
+% 2. declared human-model fidelity
+% 3. metrics with known sensitivity
+% 4. an interface a real stack already speaks
+% Point at Table 3 for where the existing platforms stop.
+
+\subsection{Contributions}
+\label{sec:intro:contrib}
+\begin{itemize}
+  \item \textbf{C1 --- A transport-neutral contract.} A surface of ten topics
+        carrying standard message types, with per-robot namespacing, ROS
+        frames and a published simulation clock, behind which the simulator
+        cannot tell \texttt{ros\_tcp\_endpoint} from a dependency-free Python
+        endpoint (\S\ref{sec:platform:contract}).
+  \item \textbf{C2 --- Scenario and crowd authoring that scales to crowds.}
+        Point and area goals, multi-waypoint routes, groups and formations,
+        crowd modes that break formation, occupancy-grid and image import,
+        deterministic seeding (\S\ref{sec:platform:authoring}).
+  \item \textbf{C3 --- A measured equivalence between the two transports.}
+        Not "we publish ROS topics" but a test: same seed, same policy, same
+        metrics across the two bindings (\S\ref{sec:results:equivalence}).
+  \item \textbf{C4 --- Reuse of an unmodified third-party stack, with its
+        timing budget.} What a real pipeline needs the simulator to provide,
+        and what it costs (\S\ref{sec:results:stack}).
+  \item \textbf{C5 --- Evidence that crowd fidelity changes the verdict.}
+        The result that makes this an assessment paper rather than a software
+        report (\S\ref{sec:results:sensitivity}).
+  \item \textbf{C6 --- Reproducibility artefacts.} Scenarios, seeds, analysis
+        scripts and containers (\S\ref{sec:method:repro}).
+\end{itemize}
+
+\subsection{Scope and non-claims}
+\label{sec:intro:scope}
+% Explicit, early, and repeated in the discussion:
+%   - no real-robot experiments; the claim is pipeline and timing
+%     compatibility, verified against a stack that normally drives hardware;
+%   - no human-subject study; the human side is validated against recorded
+%     pedestrian trajectories, not against people in the loop;
+%   - kinematic and perceptual transfer is not assessed.
+% Editors forgive a declared limit; they do not forgive an untested claim.
+
+\subsection{Organisation}
+\label{sec:intro:org}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Social navigation planners and human models}
+\label{sec:related:planners}
+% Reciprocal collision avoidance (ORCA), social force model, learning-based
+% policies, group-aware planners. Keep it short: the paper is not about a
+% planner, it is about how planners are judged.
+
+\subsection{Benchmarks, simulators and platforms}
+\label{sec:related:benchmarks}
+% SocNavBench, SocialGym 1.0/2.0, SEAN 2.0, MRPB 1.0, Arena-Bench, Habitat 3.0,
+% Jubileo, IBISCape. Then Table 3.
+
+\subsection{Metric design and its critics}
+\label{sec:related:metrics}
+% The "human-aligned benchmarking" line: comfort, legibility, personal space;
+% the argument that metric choice determines the verdict.
+
+\subsection{Where RobotSNAP sits}
+\label{sec:related:position}
+% The gap: platforms either author scenarios well, or connect to real stacks
+% well, rarely both; almost none test their own transport equivalence.
+
+\begin{table*}[t]
+  \centering
+  \caption{Positioning against the closest platforms. Columns marked with a
+  dash are either absent or not documented by the authors.
+  \note{Confirm every cell against the primary source before submission; this
+  is the table a reviewer will check first.}}
+  \label{tab:positioning}
+  \begin{tabular}{lcccccc}
+    \toprule
+    Platform & Scenario authoring & Real floor plans & Crowd / group modes
+      & ROS \ros{} binding & Dependency-free Python & Transport equivalence tested \\
+    \midrule
+    SocNavBench        & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    SocialGym 2.0      & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    SEAN 2.0           & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    MRPB 1.0           & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Arena-Bench        & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Habitat 3.0        & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    Jubileo            & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+    \midrule
+    \textbf{RobotSNAP} & yes & yes & yes & yes & yes & \textbf{yes} \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The RobotSNAP Platform}
+\label{sec:platform}
+
+\subsection{Design requirements from four usage profiles}
+\label{sec:platform:requirements}
+% The requirement set is derived from the intended users, not from taste.
+% Table 1 is the contract with the reader: each profile lists what it must not
+% be forced to install.
+
+\begin{table}[t]
+  \centering
+  \caption{The four usage profiles the platform must serve, and the dependency
+  each one is allowed to have. The fourth is the union of the first three and
+  is the reason the contract must be transport-neutral rather than merely
+  ROS-compatible.}
+  \label{tab:profiles}
+  \begin{tabular}{p{0.20\linewidth}p{0.26\linewidth}p{0.42\linewidth}}
+    \toprule
+    Profile & Entry point & Must not require \\
+    \midrule
+    Software / HRI prototyping & Dependency-free Python client & Any ROS installation \\
+    Roboticist & \ros{} graph through \texttt{ros\_tcp\_endpoint} & Python client, Gymnasium \\
+    Learning / RL researcher & Gymnasium environment, PyTorch & ROS, hand-written plumbing \\
+    Full pipeline & All of the above, simultaneously & Rewriting a policy per transport \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{System architecture}
+\label{sec:platform:architecture}
+\begin{figure}[t]
+  \centering
+  % \includegraphics[width=\linewidth]{fig/architecture.pdf}
+  \fbox{\parbox{0.92\linewidth}{\centering\vspace{1.5cm}
+  \textbf{Figure 1} --- architecture.\\[2mm]
+  Simulator core (scene, physics, sensors, scenario runtime) $\to$
+  transport (identical wire protocol) $\to$ either \texttt{ros\_tcp\_endpoint}
+  on a \ros{} graph, or \texttt{robotsnap.bridge} in pure Python.\\
+  Both feed the same client: a policy, a Gymnasium environment, a recorder.
+  \vspace{1.5cm}}}
+  \caption{One scene, one contract, two bindings. The transport is the only
+  component that changes between the top and the bottom of the stack.}
+  \label{fig:architecture}
+\end{figure}
+% Layers: simulation core; scenario and map authoring; agent layer (robot(s),
+% humans, groups); transport; client bindings. Keep to one page.
+
+\subsection{The topic contract}
+\label{sec:platform:contract}
+
+\begin{table}[t]
+  \centering
+  \caption{The complete surface: ten topics, standard message types, no custom
+  \texttt{.msg} file. Every per-robot stream is additionally reachable at
+  \texttt{/robot\_\textless id\textgreater/\textless topic\textgreater}; the
+  unprefixed name reaches the primary robot only. This is what makes the
+  dependency-free Python path possible.}
+  \label{tab:topics}
+  \begin{tabular}{llll}
+    \toprule
+    Topic & Type & Dir. & Content \\
+    \midrule
+    \texttt{/clock}                        & \texttt{rosgraph\_msgs/Clock}    & out & simulation clock \\
+    \texttt{/odom}                         & \texttt{nav\_msgs/Odometry}      & out & robot pose and twist \\
+    \texttt{/scan}                         & \texttt{sensor\_msgs/LaserScan}  & out & lidar \\
+    \texttt{/map}                          & \texttt{nav\_msgs/OccupancyGrid} & out & occupancy grid, walls 100 / free 0 \\
+    \texttt{/cmd\_vel}                     & \texttt{geometry\_msgs/Twist}    & in  & velocity command \\
+    \texttt{/simulation/state}             & \texttt{std\_msgs/String} (JSON) & out & whole-session snapshot \\
+    \texttt{/simulation/agents}            & \texttt{std\_msgs/String} (JSON) & out & every agent, in the robot frame \\
+    \texttt{/simulation/control}           & \texttt{std\_msgs/String} (JSON) & in  & session and crowd commands \\
+    \texttt{/simulation/control\_result}   & \texttt{std\_msgs/String} (JSON) & out & answer to one command \\
+    \texttt{/reset\_done}                  & \texttt{std\_msgs/Bool}          & out & handshake: world ready \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+% Frames, units and conventions paragraph: ROS frame (x forward, y left, z up,
+% yaw in radians); conversion happens inside the simulator so no client
+% transforms anything; image order for the occupancy grid.
+
+\subsection{Two bindings, one wire protocol}
+\label{sec:platform:bindings}
+% The simulator dials out as a client. Whatever it dials answers: either the
+% ROS endpoint, or the pure-Python endpoint seeded from the same type table.
+% Consequence: one scene runs in both setups and the simulator cannot tell the
+% two apart. That property is a design claim here and a tested claim in
+% \S\ref{sec:results:equivalence}.
+
+\subsection{Scenario and map authoring}
+\label{sec:platform:authoring}
+% Occupancy-grid import (PNG and HouseExpo layouts); point goals and area
+% goals; multi-waypoint routes for humans; groups and formations; crowd modes:
+% synchronized, independent, and the per-agent scatter used for crossing and
+% circle crowds; loop / wait / vanish terminal behaviours; per-route and
+% per-scenario seeding. State plainly the rule that a goal is either a point
+% or an area, never both.
+
+\subsection{Human modelling}
+\label{sec:platform:humans}
+% Two modes only, and say so: an in-simulator social-force model, and external
+% control from a client (this is the hook a \ros{} policy uses). Formation and
+% conflict behaviour, group cohesion, and the deliberate absence of learned
+% human models in this version.
+
+\subsection{Heterogeneous multi-robot support}
+\label{sec:platform:multirobot}
+% Several robots, several platforms (differential-drive and omnidirectional
+% archetypes), per-robot command topic, per-robot control authority: a robot
+% moves only while it is the selected one and stops when no command arrives.
+
+\subsection{Runtime introspection}
+\label{sec:platform:introspection}
+% What an assessor actually needs: a toggleable debug overlay, recording, a
+% live occupancy minimap with occlusion-aware perception cones, and a camera
+% that keeps visibility of the tracked agent behind walls.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Evaluation Methodology}
+\label{sec:method}
+
+\subsection{Claims and their falsification criteria}
+\label{sec:method:claims}
+% This table is the spine of the paper. Write the paper so that a reader can
+% read Table 4 alone and know what was tested.
+
+\begin{table*}[t]
+  \centering
+  \caption{Each claim, the instrument that tests it, and the outcome that
+  would falsify it. Nothing in the results section is reported that is not
+  anchored here.}
+  \label{tab:claims}
+  \begin{tabular}{p{0.22\linewidth}p{0.32\linewidth}p{0.38\linewidth}}
+    \toprule
+    Claim & Test & Falsified if \\
+    \midrule
+    C3 Cross-transport equivalence
+      & Same scenario, same seed, same policy, replayed through
+        \texttt{ros\_tcp\_endpoint} and through the Python endpoint; compare
+        full state streams and every metric
+      & Any trajectory or metric differs beyond \ph{tolerance}, or the
+        difference grows with episode length \\
+    C4 Stack reuse
+      & Run \ph{stack} unmodified, recording every source edit forced by the
+        interface
+      & The stack needs a change to its navigation behaviour, or the control
+        loop misses its deadline at the stated rate \\
+    C5 Human-model sensitivity
+      & Rank \ph{K} policies under a synthetic crowd and under
+        \ph{dataset}-calibrated trajectories
+      & The ranking is identical across all metrics, i.e.\ crowd fidelity
+        does not matter \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{Scenario suite}
+\label{sec:method:scenarios}
+% Families chosen so that each isolates one social phenomenon. Say how many
+% seeds per family and why.
+
+\begin{table}[t]
+  \centering
+  \caption{Scenario families. The first five are authored from occupancy
+  grids; IMT is an existing Unity scene, which is what makes the suite cover
+  both worlds rather than only the synthetic one.}
+  \label{tab:scenarios}
+  \begin{tabular}{llll}
+    \toprule
+    Family & Agents & Phenomenon isolated & Seeds \\
+    \midrule
+    Straight corridor      & 1 + 2  & head-on passing            & \tbd \\
+    Intersection           & 1 + 3  & priority negotiation       & \tbd \\
+    Perpendicular crossing & 1 + 4  & crossing flow              & \tbd \\
+    Crowd crossing         & 1 + 12 & dense anti-flow            & \tbd \\
+    Circle crowd           & 1 + 10 & encircling group           & \tbd \\
+    IMT (Unity scene)      & 1 + \ph{n} & real topology          & \tbd \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Metrics}
+\label{sec:method:metrics}
+% Definitions matter more than names: a reviewer will check that each metric
+% is computable from the recorded streams and that its units are stated.
+
+\begin{table}[t]
+  \centering
+  \caption{Metrics, computed from the recorded topic streams so that a third
+  party can recompute them from a published recording without re-running the
+  simulator.}
+  \label{tab:metrics}
+  \begin{tabular}{llll}
+    \toprule
+    Metric & Definition & Unit & Aggregation \\
+    \midrule
+    Success rate        & reached final goal within the time budget & \%        & mean over seeds \\
+    Collisions          & agent contact events                       & count     & sum, then mean \\
+    Time to goal        & mission duration                           & s         & median, IQR \\
+    Path efficiency     & shortest feasible path / travelled path    & ratio     & mean \\
+    Min.\ separation    & minimum robot--human distance              & m         & min, then mean \\
+    Personal-space cost & integral of violation of \ph{radius}       & \ph{unit} & mean \\
+    Comfort             & \ph{definition: jerk, or acceleration}     & \ph{unit} & mean \\
+    Frozen time         & time with speed below \ph{threshold}       & s         & mean \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Statistical protocol}
+\label{sec:method:stats}
+% Paired comparisons over seeds, since the same seed makes scenarios
+% comparable; report effect sizes and confidence intervals, not only p-values;
+% state the correction used for the family of comparisons.
+
+\subsection{Reproducibility artefacts}
+\label{sec:method:repro}
+% Containers, launch files, seeds, the analysis scripts, and the machine used
+% to take the timing measurements.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Results}
+\label{sec:results}
+
+\subsection{Cross-transport equivalence}
+\label{sec:results:equivalence}
+% The headline. Table: per metric, ROS-transport value, Python-transport
+% value, absolute and relative difference. Then one figure: the divergence of
+% the state streams over episode time, which is the plot that shows whether
+% the difference is bounded or accumulating.
+
+\subsection{An unmodified third-party stack}
+\label{sec:results:stack}
+% What was reused as-is, what had to be configured, and what the vendor would
+% have had to change on hardware. Report the count of source edits: it should
+% be zero in the navigation logic, and non-zero only in launch and parameter
+% files. That distinction is the content of the claim.
+
+\subsection{Control-loop budget}
+\label{sec:results:timing}
+\begin{table}[t]
+  \centering
+  \caption{Where a control step goes. The right column is the part a roboticist
+  actually needs: which loop rates the platform can support.}
+  \label{tab:timing}
+  \begin{tabular}{lcc}
+    \toprule
+    Stage & Mean & 95th percentile \\
+    \midrule
+    Simulator step (\simstep{} = \ph{value}\,s)      & \tbd & \tbd \\
+    Bridge round trip                                & \tbd & \tbd \\
+    \ros{} publish $\to$ client receive              & \tbd & \tbd \\
+    Client compute                                   & \tbd & \tbd \\
+    End-to-end control period                        & \tbd & \tbd \\
+    \midrule
+    Sustained rate                                   & \ph{Y}\,Hz & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Does crowd fidelity change the verdict?}
+\label{sec:results:sensitivity}
+% The human-centered result. Rank policies under the synthetic crowd, then
+% under recorded trajectories; report rank correlation and the cases where the
+% order flips. One figure: rank before versus rank after, with the policies
+% that swap labelled.
+
+\subsection{Scenario-family results and the ranking of baselines}
+\label{sec:results:families}
+% The conventional results table, per family, per policy. It is here because
+% it is expected, not because it is the contribution.
+
+\subsection{Scaling}
+\label{sec:results:scaling}
+% Agents versus achievable step rate, on the stated machine. State the crowd
+% size used for the timing measurements, and whether the timed episodes were
+% in motion or had already converged --- a timing figure taken after the agents
+% have arrived is not a timing figure.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What the design decisions buy}
+\label{sec:discussion:design}
+% Connect each requirement of Table 1 to the design choice that satisfies it,
+% and to the result that evidences it.
+
+\subsection{Limits of the validation}
+\label{sec:discussion:limits}
+% State, in this order and without hedging:
+%   - the compatibility demonstrated is interface and timing compatibility;
+%   - kinematic transfer, sensor transfer and actuator transfer are not
+%     assessed, and nothing here licenses a sim-to-real claim;
+%   - the human side is validated against recorded trajectories, not against
+%     people in the loop; a human-subject study is future work;
+%   - one third-party stack is not a population of stacks.
+
+\subsection{Threats to validity}
+\label{sec:discussion:threats}
+% Construct (do the metrics measure what the names say), internal (seed reuse,
+% measurement conditions), external (topologies, crowd densities, robot
+% platforms).
+
+\subsection{Towards automated, statistical benchmarking}
+\label{sec:discussion:roadmap}
+% The direction this platform is built for: policy in, dataset of layouts
+% (HouseExpo and successors), ladder of topology families, statistical report
+% out. Say what is missing today: the multi-agent learning loop, and the real
+% deployment that would close the last gap.
+
+\subsection{Recommendations for reporting social navigation results}
+\label{sec:discussion:reporting}
+% Short, opinionated checklist: declare the human model, its calibration and
+% its provenance; publish seeds; report to whom the metrics refer; state the
+% transport and the loop rate at which the policy ran. A platform paper earns
+% its place partly by leaving the field a reporting norm.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+\label{sec:conclusion}
+% One paragraph on what was built, one on what was tested, one on what is not
+% claimed, one sentence on the next step.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bmhead{Declarations}
+% If \bmhead is not defined by your local class, use \section*{Declarations}.
+
+\begin{itemize}
+  \item Funding: \tbd
+  \item Competing interests: \tbd
+  \item Ethics approval: not applicable --- no human participants.
+  \item Data availability: scenarios, seeds, analysis scripts and containers
+        are released at \ph{URL}.
+  \item Code availability: same repository; the simulator version used for
+        every number in this paper is tagged \ph{tag}.
+  \item Authors' contributions: \tbd
+\end{itemize}
+
+\bmhead{Appendix A --- Complete topic reference}
+% Extend Table 2 with the per-robot naming rule, frame conventions, and the
+% JSON schemas of the four simulation topics.
+
+\bmhead{Appendix B --- Scenario file schema}
+% One commented example, showing a point goal, an area goal, a multi-waypoint
+% human route, a group, and a crowd mode.
+
+\bmhead{Appendix C --- Metric definitions}
+% Exact formulas, so a third party can recompute every number from a
+% recording.
+
+\bmhead{Appendix D --- Reproduction recipe}
+% The shortest path from a clean machine to Table 5: commands, containers,
+% expected runtime.
+
+\bibliography{sn-bibliography}
+
+\end{document}

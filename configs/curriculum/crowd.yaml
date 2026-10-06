@@ -1,0 +1,14 @@
+name: crowd
+description: >-
+  A short two-rung ladder that goes straight to density: a small crowd to warm
+  up, then a large one to settle on. The last rung has no exit rule of its own,
+  so a run that clears the first stage trains on the big crowd for ever.
+stages:
+  - name: few
+    scenario: crowd
+    episodes: 100
+  - name: many
+    scenario: big_crowd
+    window: 30
+    min_episodes: 30
+    success_threshold: 0.6

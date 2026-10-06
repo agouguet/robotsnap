@@ -1,0 +1,26 @@
+# PPO (Schulman et al., 2017): the on-policy clipped-objective baseline.
+#
+# Defaults for `python -m robotsnap train --config ppo`. Every key is the name
+# of a `train` option, so it can also be written on the command line; a flag
+# typed there overrides the value below. On-policy, so the entropy bonus is a
+# real knob here and `--entropy` is translated to the algorithm's `ent_coef`.
+algo: ppo
+timesteps: 100000
+gamma: 0.99
+lr: 3.0e-4
+hidden: 64
+entropy: 0.01
+policy_kwargs:
+  log_std_init: -0.5
+algo_kwargs:
+  n_steps: 512
+  batch_size: 128
+  n_epochs: 10
+  gae_lambda: 0.95
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0

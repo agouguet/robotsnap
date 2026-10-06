@@ -1,0 +1,20 @@
+# The worked example of `robotsnap.models.template`, as
+# `python -m robotsnap train --config template`.
+#
+# This task is deliberately smaller than CADRL and SARL: a flat five-number
+# observation, a three-command action set and a reward that pays only progress
+# and the goal. It keeps room for no neighbour at all, so `max_neighbours` has
+# nothing to size, and it zeroes `collision_penalty`, `out_of_bounds_penalty`
+# and `time_penalty` itself - which is why those options are not listed here,
+# even though `train` defines them. `robotsnap.models.template` is the model to
+# copy when writing another method.
+method: template
+episodes: 200
+max_steps: 300
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0
+goal_radius: 0.5
+max_linear: 1.0
+max_angular: 1.0

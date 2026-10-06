@@ -1,0 +1,18 @@
+# REINFORCE (Williams, 1992): the package's own Monte-Carlo policy gradient.
+#
+# Defaults for `python -m robotsnap train --config reinforce`. This learner is
+# the loop of this package and counts episodes, not control steps, so there is
+# no `timesteps` here - `--timesteps` is only read by the Stable-Baselines3
+# runs. Each episode is capped by `max_steps` and by the world-time budget
+# `seconds`, whichever comes first.
+algo: reinforce
+episodes: 1000
+max_steps: 300
+gamma: 0.99
+lr: 1.0e-3
+hidden: 64
+entropy: 0.01
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="1450" viewBox="0 0 1640 1450" role="img" aria-labelledby="ttl desc">
+  <title id="ttl">RobotSNAP : architecture des communications Python / Unity / ROS 2 / TCP</title>
+  <desc id="desc">Diagramme de l'architecture de communication de RobotSNAP, observée dans le code actif le 2 octobre 2026. Python porte les décisions et l'orchestration ; Unity porte la simulation. Deux chemins alternatifs desservent un seul et même endpoint Unity sur le port TCP 10000. Chemin A, sans ROS, par défaut : le client Python, RobotSNAPBridge (serveur TCP pur Python, dans le même processus que le client) et Unity via ROS-TCP-Connector ; une extension optionnelle branche Ros2Gateway vers un graphe ROS 2 sans ros_tcp_endpoint. Chemin B, ROS 2 natif : le client Python via rclpy et les autres noeuds ROS 2 rejoignent le graphe ROS 2 / DDS, et ros_tcp_endpoint sert Unity en TCP sur le port 10000. Un encadré liste les messages communs : les commandes en orange vont vers Unity, les observations et réponses en bleu reviennent d'Unity, les composants ROS 2 sont en violet. Un seul serveur écoute sur le port 10000 : configuration A ou B, jamais les deux.</desc>
+
+  <defs>
+    <marker id="aO" viewBox="0 0 18 18" refX="16.5" refY="9" markerWidth="18" markerHeight="18" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L18,9 L0,18 Z" fill="#E07B2E"/>
+    </marker>
+    <marker id="aB" viewBox="0 0 18 18" refX="16.5" refY="9" markerWidth="18" markerHeight="18" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L18,9 L0,18 Z" fill="#2F6FB5"/>
+    </marker>
+    <marker id="aV" viewBox="0 0 18 18" refX="16.5" refY="9" markerWidth="15" markerHeight="15" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L18,9 L0,18 Z" fill="#6E4FA3"/>
+    </marker>
+  </defs>
+
+  <style>
+    .tx   { font-family: "DejaVu Sans", Verdana, sans-serif; fill: #2E3338; }
+    .b    { font-weight: bold; }
+    .h1   { font-size: 32px; font-weight: bold; }
+    .h2   { font-size: 24px; font-weight: bold; }
+    .h3   { font-size: 22px; font-weight: bold; }
+    .t20  { font-size: 20px; }
+    .muted{ fill: #5C636B; }
+    .cmd  { fill: #C9671F; font-weight: bold; }
+    .ret  { fill: #245C9B; font-weight: bold; }
+    .ros  { fill: #5B3F8C; font-weight: bold; }
+    .py   { fill: #245F55; font-weight: bold; }
+    .card { fill: #FFFFFF; stroke: #D9D4CA; stroke-width: 1.5; }
+    .panel{ fill: #FCFBF8; stroke: #D9D4CA; stroke-width: 1.5; }
+    .shadow { fill: #E8E3D9; }
+  </style>
+
+  <rect x="0" y="0" width="1640" height="1450" fill="#F7F5F0"/>
+
+  <!-- ===================== EN-TETE ===================== -->
+  <text class="tx h1" x="60" y="64">RobotSNAP · Architecture des communications</text>
+  <text class="tx t20 muted" x="60" y="98">Python décide, Unity simule ; les transports acheminent les messages.</text>
+  <text class="tx t20 muted" x="1580" y="56" text-anchor="end">2 octobre 2026</text>
+  <text class="tx t20 muted" x="1580" y="84" text-anchor="end">lecture statique du code actif</text>
+
+  <!-- legende -->
+  <rect x="60" y="112" width="340" height="36" rx="18" class="card"/>
+  <circle cx="84" cy="130" r="8" fill="#E07B2E"/>
+  <text class="tx t20" x="104" y="137">Commandes → Unity</text>
+  <rect x="410" y="112" width="280" height="36" rx="18" class="card"/>
+  <circle cx="434" cy="130" r="8" fill="#2F6FB5"/>
+  <text class="tx t20" x="454" y="137">Retours de Unity</text>
+  <rect x="700" y="112" width="320" height="36" rx="18" class="card"/>
+  <circle cx="724" cy="130" r="8" fill="#6E4FA3"/>
+  <text class="tx t20" x="744" y="137">Composants ROS 2</text>
+
+  <!-- ===================== CARTES RESPONSABILITE ===================== -->
+  <rect class="shadow" x="63" y="168" width="720" height="180" rx="12"/>
+  <rect class="card"   x="60" y="165" width="720" height="180" rx="12"/>
+  <path d="M60,177 a12,12 0 0 1 12,-12 h696 a12,12 0 0 1 12,12 v36 h-720 z" fill="#E7F1EF"/>
+  <rect x="84" y="183" width="14" height="14" rx="3" fill="#2F7A6E"/>
+  <text class="tx h3 py" x="110" y="199">Python · décisions et orchestration</text>
+  <text class="tx t20" x="90" y="238">• Algorithmes de navigation et décision</text>
+  <text class="tx t20" x="90" y="268">• Entraînement / inférence RL (PyTorch)</text>
+  <text class="tx t20" x="90" y="298">• Observations, récompenses, viewer, analyse</text>
+  <text class="tx t20" x="90" y="328">• Façade RobotSNAPClient · transport tcp | ros2</text>
+
+  <rect class="shadow" x="863" y="168" width="720" height="180" rx="12"/>
+  <rect class="card"   x="860" y="165" width="720" height="180" rx="12"/>
+  <path d="M860,177 a12,12 0 0 1 12,-12 h696 a12,12 0 0 1 12,12 v36 h-720 z" fill="#ECEFF2"/>
+  <rect x="884" y="183" width="14" height="14" rx="3" fill="#3B4450"/>
+  <text class="tx h3" x="910" y="199" fill="#3B4450">Unity · simulateur</text>
+  <text class="tx t20" x="890" y="238">• Monde et scénarios · robots et piétons</text>
+  <text class="tx t20" x="890" y="268">• Physique et temps · capteurs (lidar, odom)</text>
+  <text class="tx t20" x="890" y="298">• Enregistrement des métriques d'épisode</text>
+  <text class="tx t20" x="890" y="328">• Exécute les commandes, publie les résultats</text>
+
+  <!-- ===================== MESSAGES COMMUNS ===================== -->
+  <rect class="shadow" x="63" y="365" width="1520" height="298" rx="12"/>
+  <rect class="card"   x="60" y="362" width="1520" height="298" rx="12"/>
+  <text class="tx h2" x="90" y="398">Messages communs à tous les chemins</text>
+  <text class="tx t20 muted" x="1550" y="394" text-anchor="end">types ROS 2 en CDR · JSON dans std_msgs/String</text>
+
+  <!-- commandes vers Unity -->
+  <text class="tx t20 cmd" x="112" y="448">Vers Unity · commandes</text>
+  <line x1="112" y1="468" x2="1526" y2="468" stroke="#E07B2E" stroke-width="5" marker-end="url(#aO)"/>
+  <text class="tx t20" x="112" y="496">/cmd_vel · geometry_msgs/Twist (vitesse linéaire / angulaire)</text>
+  <text class="tx t20" x="112" y="524">/simulation/control · JSON dans std_msgs/String : play, pause, reset, scénario, objectifs, piétons, temps</text>
+
+  <!-- retours de Unity -->
+  <text class="tx t20 ret" x="112" y="562">Depuis Unity · observations et réponses</text>
+  <line x1="1526" y1="582" x2="114" y2="582" stroke="#2F6FB5" stroke-width="5" marker-end="url(#aB)"/>
+  <text class="tx t20" x="112" y="610">/odom · /scan · /map (pose, lidar, carte) · /simulation/state · /simulation/agents (session, robots, piétons)</text>
+  <text class="tx t20" x="112" y="638">/simulation/control_result (acquittement) · /reset_done (monde prêt) · /simulation/metrics (bilan d'épisode)</text>
+
+  <!-- ===================== CHEMIN A ===================== -->
+  <rect class="shadow" x="63" y="681" width="1520" height="391" rx="12"/>
+  <rect class="panel"  x="60" y="678" width="1520" height="391" rx="12"/>
+  <text class="tx h2" x="90" y="714">CHEMIN A · Sans ROS (défaut)</text>
+  <text class="tx t20 muted" x="1550" y="710" text-anchor="end">robotsnap.bridge · Python seul processus</text>
+
+  <!-- pipeline A -->
+  <rect x="90" y="736" width="350" height="125" rx="10" class="card"/>
+  <text class="tx h3" x="110" y="774" fill="#2F7A6E">Python</text>
+  <text class="tx t20" x="110" y="802">RobotSNAPClient</text>
+  <text class="tx t20" x="110" y="828">envs · viewer</text>
+  <text class="tx t20" x="110" y="854">décisions et pilotage</text>
+
+  <line x1="448" y1="792" x2="552" y2="792" stroke="#E07B2E" stroke-width="4" marker-end="url(#aO)"/>
+  <line x1="554" y1="822" x2="450" y2="822" stroke="#2F6FB5" stroke-width="4" marker-end="url(#aB)"/>
+
+  <rect x="560" y="736" width="370" height="125" rx="10" class="card"/>
+  <text class="tx h3" x="580" y="774">RobotSNAPBridge</text>
+  <text class="tx t20" x="580" y="802">serveur TCP · Python</text>
+  <text class="tx t20" x="580" y="828">encode / décode CDR</text>
+  <text class="tx t20" x="580" y="854">dernier état / topic</text>
+
+  <text class="tx t20 b" x="1025" y="772" text-anchor="middle">TCP :10000</text>
+  <line x1="940" y1="792" x2="1112" y2="792" stroke="#E07B2E" stroke-width="4" marker-end="url(#aO)"/>
+  <line x1="1114" y1="822" x2="942" y2="822" stroke="#2F6FB5" stroke-width="4" marker-end="url(#aB)"/>
+
+  <rect x="1120" y="736" width="430" height="125" rx="10" class="card"/>
+  <text class="tx h3" x="1140" y="774" fill="#3B4450">Unity</text>
+  <text class="tx t20" x="1140" y="802">ROS-TCP-Connector</text>
+  <text class="tx t20" x="1140" y="828">client TCP</text>
+  <text class="tx t20" x="1140" y="854">exécute · publie</text>
+
+  <text class="tx t20 muted" x="90" y="890">Même processus Python, mémoire partagée ;</text>
+  <text class="tx t20 muted" x="90" y="916">pas de second serveur réseau · aucun ROS requis.</text>
+
+  <!-- branche optionnelle -->
+  <path d="M780,861 L780,930" stroke="#6E4FA3" stroke-width="2.5" stroke-dasharray="7 6" fill="none"/>
+  <text class="tx t20 ros" x="90" y="968">Extension optionnelle</text>
+  <text class="tx t20 muted" x="90" y="996">bridge --ros2</text>
+
+  <rect x="470" y="930" width="370" height="105" rx="10" fill="#F3EFFA" stroke="#B9A6D8" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text class="tx h3 ros" x="490" y="968">Ros2Gateway</text>
+  <text class="tx t20" x="490" y="996">miroir bidirectionnel</text>
+  <text class="tx t20" x="490" y="1022">Unity ↔ ROS 2</text>
+
+  <text class="tx t20 ros" x="900" y="946" text-anchor="middle">topics</text>
+  <line x1="846" y1="972" x2="954" y2="972" stroke="#6E4FA3" stroke-width="3" stroke-dasharray="6 5" marker-end="url(#aV)"/>
+  <line x1="956" y1="1002" x2="848" y2="1002" stroke="#6E4FA3" stroke-width="3" stroke-dasharray="6 5" marker-end="url(#aV)"/>
+
+  <rect x="960" y="930" width="570" height="105" rx="10" fill="#F3EFFA" stroke="#B9A6D8" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text class="tx h3 ros" x="980" y="968">Graphe ROS 2 / DDS</text>
+  <text class="tx t20" x="980" y="996">nœuds ROS 2 : navigation, outils</text>
+  <text class="tx t20" x="980" y="1022">rclpy / Docker (optionnel)</text>
+
+  <text class="tx t20 muted" x="90" y="1058">La passerelle relie les nœuds ROS 2 au pont Python ; ros_tcp_endpoint n'est pas utilisé dans ce mode.</text>
+
+  <!-- ===================== CHEMIN B ===================== -->
+  <rect class="shadow" x="63" y="1093" width="1520" height="282" rx="12"/>
+  <rect class="panel"  x="60" y="1090" width="1520" height="282" rx="12"/>
+  <text class="tx h2" x="90" y="1126">CHEMIN B · ROS 2 natif (alternatif)</text>
+  <text class="tx t20 muted" x="1550" y="1122" text-anchor="end">Un seul serveur :10000 · A OU B</text>
+
+  <rect x="90" y="1148" width="260" height="120" rx="10" class="card"/>
+  <text class="tx h3" x="110" y="1186" fill="#2F7A6E">Python</text>
+  <text class="tx t20" x="110" y="1214">Ros2Client / rclpy</text>
+  <text class="tx t20" x="110" y="1240">+ nœuds ROS 2</text>
+
+  <text class="tx t20 muted" x="387" y="1180" text-anchor="middle">DDS</text>
+  <line x1="358" y1="1196" x2="418" y2="1196" stroke="#E07B2E" stroke-width="4" marker-end="url(#aO)"/>
+  <line x1="420" y1="1226" x2="360" y2="1226" stroke="#2F6FB5" stroke-width="4" marker-end="url(#aB)"/>
+
+  <rect x="425" y="1148" width="260" height="120" rx="10" fill="#F3EFFA" stroke="#B9A6D8" stroke-width="1.5"/>
+  <text class="tx h3 ros" x="445" y="1186">Graphe ROS 2</text>
+  <text class="tx t20" x="445" y="1214">DDS · topics</text>
+  <text class="tx t20" x="445" y="1240">pub / sub</text>
+
+  <text class="tx t20 muted" x="760" y="1180" text-anchor="middle">DDS</text>
+  <line x1="693" y1="1196" x2="828" y2="1196" stroke="#E07B2E" stroke-width="4" marker-end="url(#aO)"/>
+  <line x1="830" y1="1226" x2="695" y2="1226" stroke="#2F6FB5" stroke-width="4" marker-end="url(#aB)"/>
+
+  <rect x="835" y="1148" width="320" height="120" rx="10" fill="#F3EFFA" stroke="#B9A6D8" stroke-width="1.5"/>
+  <text class="tx h3 ros" x="855" y="1186">ros_tcp_endpoint</text>
+  <text class="tx t20" x="855" y="1214">serveur TCP alternatif</text>
+  <text class="tx t20" x="855" y="1240">relais ROS 2 ↔ TCP</text>
+
+  <text class="tx t20 b" x="1242" y="1180" text-anchor="middle">TCP :10000</text>
+  <line x1="1160" y1="1196" x2="1318" y2="1196" stroke="#E07B2E" stroke-width="4" marker-end="url(#aO)"/>
+  <line x1="1320" y1="1226" x2="1162" y2="1226" stroke="#2F6FB5" stroke-width="4" marker-end="url(#aB)"/>
+
+  <rect x="1330" y="1148" width="215" height="120" rx="10" class="card"/>
+  <text class="tx h3" x="1350" y="1186" fill="#3B4450">Unity</text>
+  <text class="tx t20" x="1350" y="1214">client TCP</text>
+  <text class="tx t20" x="1350" y="1240">simulateur</text>
+
+  <text class="tx t20 muted" x="90" y="1296">Le client Python (rclpy) se connecte au graphe ROS 2, jamais au port 10000.</text>
+  <text class="tx t20 muted" x="90" y="1322">Unity reste la simulation ; Unity ouvre la connexion :10000 vers le serveur.</text>
+  <text class="tx t20 muted" x="90" y="1348">ros_tcp_endpoint relaie TCP ↔ ROS 2 ; ROS 2 distribue les topics aux nœuds.</text>
+
+  <!-- ===================== PIED ===================== -->
+  <line x1="60" y1="1374" x2="1580" y2="1374" stroke="#D9D4CA" stroke-width="1.5"/>
+  <text class="tx t20 b" x="60" y="1392">Un seul serveur sur le port 10000 : A OU B, jamais les deux.</text>
+  <text class="tx t20 muted" x="1580" y="1392" text-anchor="end">même protocole filaire en A et B</text>
+</svg>

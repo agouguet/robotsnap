@@ -1,0 +1,24 @@
+# SARL (Chen et al., 2019), as `python -m robotsnap train --config sarl`.
+#
+# SARL is CADRL's sibling: the same task, the same discrete commands and the
+# same social cost, with self-attention over the neighbour rows in place of the
+# LSTM. Only the options that really reach the task are listed; the encoder's
+# heads and the rest are constants of `robotsnap.models.sarl`.
+#
+# As for CADRL, `max_neighbours`, the value learner's constants, the social cost's
+# weights and the discrete action grid have no `train` flag, and the base
+# reward weights (`goal_reward`, `progress_reward`, `collision_penalty`,
+# `out_of_bounds_penalty`, `time_penalty`) are ignored because the social cost
+# replaces the base reward.
+method: sarl
+episodes: 500
+max_steps: 400
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0
+lidar_bins: 48
+goal_radius: 0.5
+collision_distance: 0.25
+max_linear: 1.0
+max_angular: 1.0

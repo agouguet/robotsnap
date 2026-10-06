@@ -1,0 +1,10 @@
+name: basic_short
+description: Un smoke test rapide - un episode par scenario sur les six premiers.
+scenarios:
+  - front_approach
+  - door_passing
+  - intersection
+  - circle_crowd
+  - perpendicular_traffic
+  - corner
+episodes_per_scenario: 1

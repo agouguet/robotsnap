@@ -1,0 +1,62 @@
+[build-system]
+requires = [
+    "setuptools>=60",
+    "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "RobotSNAP"
+version = "0.1.0"
+authors = [
+  { name="Adam Gouguet", email="adam.gouguet@imt-nord-europe.fr" },
+]
+description = "Robot Social Navigation Assesment Platform"
+# rosbags is the only dependency the bridge and the client import: it does the
+# CDR encoding of every message. Everything else is an extra, so a headless
+# run - a benchmark, or a ROS2 method driving the simulator - stays free of
+# torch, of gymnasium and of a display.
+dependencies = ["rosbags"]
+readme = "README.md"
+requires-python = ">=3.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+# The Gymnasium environment of src/robotsnap/envs. Nothing else in the package
+# imports it, so a session that only drives or watches the simulator stays free
+# of it. gymnasium brings numpy with it. Any run that steps an episode - the
+# environment, a benchmark - needs this extra.
+env = ["gymnasium>=0.29"]
+# The pygame window: `watch`, `bridge --viewer` and `render_mode="human"`.
+# Imported lazily, so a run without it prints the one line that installs it.
+viewer = ["pygame"]
+# Only an example training loop needs a framework, so it is its own extra: the
+# environment hands out numpy observations and takes numpy actions.
+train = ["torch"]
+# The algorithms of stable-baselines3 over the same environment: PPO, A2C, SAC
+# and the value-based DQN. Separate from ``train`` because a run that only
+# wants the REINFORCE loop of this package should not pull the algorithms in.
+sb3 = ["torch", "stable-baselines3>=2.3"]
+
+[project.scripts]
+# ``python -m robotsnap <command>`` and the installed ``robotsnap`` script are
+# the same entry point: one sub-command per run of robotsnap.runs.
+robotsnap = "robotsnap.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+# Only the bridge and its client are installed. The legacy prediction code and
+# the study scripts live in legacy/, outside src/, and stay in the repository.
+include = ["robotsnap*"]
+
+[tool.setuptools.package-data]
+'*' = ['*', '*.yaml']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# ``src`` for the package, ``tests`` so both suites import the one fake Unity
+# peer of tests/unity_peer.py instead of each carrying its own copy.
+pythonpath = ["src", "tests"]

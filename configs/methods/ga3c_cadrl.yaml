@@ -1,0 +1,21 @@
+# GA3C-CADRL (Everett et al., IROS 2018 / IEEE Access 2021), as
+# `python -m robotsnap train --config ga3c_cadrl`.
+#
+# GA3C-CADRL is the actor-critic successor of CADRL: the same crowd encoder and
+# the same discrete commands, but a policy head and a value head trained by
+# A3C-style returns. It does *not* learn V(s) with a one-step lookahead and it
+# does not learn Q(s, a) - the two things CADRL and SARL do. Only the options
+# that really reach the task are listed here; the network, the n-step return and
+# the entropy coefficient are constants of `robotsnap.models.ga3c_cadrl`.
+method: ga3c_cadrl
+episodes: 500
+max_steps: 400
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0
+lidar_bins: 48
+goal_radius: 0.5
+collision_distance: 0.25
+max_linear: 1.0
+max_angular: 1.0

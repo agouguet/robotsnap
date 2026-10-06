@@ -1,0 +1,24 @@
+# SAC (Haarnoja et al., 2018): off-policy, maximum-entropy, continuous control.
+#
+# Defaults for `python -m robotsnap train --config sac`. The environment's
+# action is the continuous `(linear_x, angular_z)` pair, so SAC drives it
+# directly. Off-policy and maximum-entropy: the temperature is learned by the
+# algorithm itself, so there is no `ent_coef` here and `--entropy` is ignored.
+algo: sac
+timesteps: 100000
+gamma: 0.99
+lr: 3.0e-4
+hidden: 256
+policy_kwargs:
+  log_std_init: -3.0
+algo_kwargs:
+  buffer_size: 300000
+  batch_size: 256
+  learning_starts: 1000
+  train_freq: 1
+  gradient_steps: 1
+  tau: 0.005
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0

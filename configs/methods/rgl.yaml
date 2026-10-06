@@ -1,0 +1,21 @@
+# RGL (Chen et al., IROS 2020, "Relational Graph Learning for Crowd
+# Navigation"), as `python -m robotsnap train --config rgl`.
+#
+# RGL keeps the CADRL/SARL learner (a state value V(s) with a lookahead) and
+# replaces the encoder with a relational graph over the crowd, then widens the
+# one-step lookahead into a depth-`d`, width-`w` search whose dynamics come from
+# a learned predictor. Only the options that reach the task are listed here; the
+# graph width, the search depth/width and the predictor are constants of
+# `robotsnap.models.rgl`.
+method: rgl
+episodes: 500
+max_steps: 400
+seconds: 120.0
+control_period: 0.2
+pacing: lockstep
+time_scale: 1.0
+lidar_bins: 48
+goal_radius: 0.5
+collision_distance: 0.25
+max_linear: 1.0
+max_angular: 1.0

@@ -1,0 +1,36 @@
+name: social_navigation
+description: >-
+  A ladder for the goal-navigation task: an empty map first, then one person,
+  then a doorway, a crossing, and finally a crowd. Each stage promotes either
+  when its episode budget is spent or once the success rate over a trailing
+  window of episodes clears its threshold.
+stages:
+  - name: empty
+    scenario: default
+    window: 20
+    min_episodes: 20
+    success_threshold: 0.9
+  - name: single_person
+    scenario: front_approach
+    window: 20
+    min_episodes: 20
+    success_threshold: 0.8
+    episodes: 150
+  - name: door
+    scenario: door_passing
+    window: 20
+    min_episodes: 20
+    success_threshold: 0.7
+    episodes: 250
+  - name: crossing
+    scenario: intersection
+    window: 25
+    min_episodes: 25
+    success_threshold: 0.7
+    episodes: 400
+  - name: crowd
+    scenario: circle_crowd
+    window: 30
+    min_episodes: 30
+    success_threshold: 0.6
+    episodes: 600

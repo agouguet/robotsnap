@@ -176,6 +176,19 @@ def _stop_session(environment, stop: bool) -> None:
     print(f"simulation stopped : {stopped}")
 
 
+def _remove_scratch_scenario(environment, scenario_id: str, directory) -> bool:
+    """Remove the scenario file a run wrote, and only that one.
+
+    A run that names a scenario the project already ships never wrote it: that
+    file belongs to the project, and removing it on the way out would take a
+    scenario away from the user. ``--keep`` and this guard are the two ways a
+    file survives a run; the environment is what knows which happened.
+    """
+    if not getattr(environment, "wrote_scenario", False):
+        return False
+    return scenario.delete(scenario_id, directory=directory)
+
+
 def _curriculum(spec: str | None) -> Any:
     """The curriculum a run asked for by name or by path, or ``None``.
 

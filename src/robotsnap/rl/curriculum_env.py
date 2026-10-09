@@ -93,6 +93,26 @@ class CurriculumEnv(gymnasium.Wrapper):
             raise TypeError("curriculum must be a Curriculum")
         self.curriculum = curriculum
 
+    def __getattr__(self, name: str) -> Any:
+        """Forward what the wrapper does not own to the environment underneath.
+
+        A run keeps reading the session off the environment it was handed -
+        ``client`` to stop it at the end, the observation names and the reward
+        weights to announce what is being trained - and a curriculum sits
+        between the two. Without this, wrapping hides them: the stop raises
+        ``AttributeError`` and the announcement quietly loses its details.
+
+        A name starting with an underscore is the wrapper's own business and is
+        never forwarded, which is also what keeps ``__getattr__`` from
+        recursing into itself through ``self.env``.
+        """
+        if name.startswith("_"):
+            raise AttributeError(name)
+        env = self.__dict__.get("env")
+        if env is None:
+            raise AttributeError(name)
+        return getattr(env, name)
+
     @property
     def curriculum_state(self) -> dict[str, Any]:
         """The current stage's counters, for a logger or a callback."""

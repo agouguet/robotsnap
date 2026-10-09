@@ -54,7 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--port", type=int, default=10000)
     parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--scenario", default="python_train_demo")
+    parser.add_argument("--scenario", default="default")
     parser.add_argument("--unity-project", default=None)
     parser.add_argument("--save", default=None, help="path to write the weights to")
     parser.add_argument("--render", action="store_true")

@@ -19,6 +19,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from robotsnap import scenario as scenarios
 from robotsnap import topics
 from robotsnap.envs.pacing import FREE, LOCKSTEP, _POLL
 from robotsnap.envs.world import World
@@ -51,6 +52,16 @@ class RobotSNAPEnvError(RuntimeError):
 
 class SessionMixin:
     """Session setup and episode clocks of :class:`~robotsnap.envs.base.RobotSNAPEnv`."""
+
+    @property
+    def wrote_scenario(self) -> bool:
+        """Whether this session wrote the scenario file, rather than finding it.
+
+        A run removes the scenario it wrote on its way out, and nothing else: an
+        id that named a scenario the project already ships names a file the
+        project owns, and a run that only played it must leave it where it is.
+        """
+        return self._scenario_written
 
     def _prepare_session(self, *, seed: int | None, options: Mapping[str, Any]) -> None:
         """Make the session ready and the wanted scenario the current one."""
@@ -104,19 +115,24 @@ class SessionMixin:
 
         scenario = options.get("scenario", self.scenario)
         if scenario is not None and self.scenario_fields and not self._scenario_written:
-            # Written once: Unity caches a scenario under the name it loaded, so
-            # writing it again on every reset would change nothing it loads.
-            path: Path | None = self.client.create_scenario(
-                scenario,
-                launch=False,
-                directory=self.scenario_directory,
-                **self.scenario_fields,
-            )
-            if path is None:
-                raise RobotSNAPEnvError(
-                    f"cannot write scenario {scenario!r}: {self.client.last_error}"
+            # A scenario of the project is played as it stands. Writing the run's
+            # fields over it would replace a file the user owns, and the run
+            # would then remove it on the way out because it named it.
+            if scenarios.find(scenario, self.scenario_directory) is None:
+                # Written once: Unity caches a scenario under the name it
+                # loaded, so writing it again on every reset would change
+                # nothing it loads.
+                path: Path | None = self.client.create_scenario(
+                    scenario,
+                    launch=False,
+                    directory=self.scenario_directory,
+                    **self.scenario_fields,
                 )
-            self._scenario_written = True
+                if path is None:
+                    raise RobotSNAPEnvError(
+                        f"cannot write scenario {scenario!r}: {self.client.last_error}"
+                    )
+                self._scenario_written = True
 
         state = self.client.snapshot() or {}
         applied = bool(state.get("scenario_applied"))

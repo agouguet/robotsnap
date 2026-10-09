@@ -1389,6 +1389,7 @@ def _run_episode(
     learn: bool,
     seed: int | None,
     max_steps: int | None,
+    render: bool = False,
 ) -> tuple[float, int, list[float], str]:
     """One episode; ``(total reward, steps, losses, outcome)``.
 
@@ -1396,7 +1397,9 @@ def _run_episode(
     greedy and silent, while a training episode explores and writes to the
     replay buffer. The two travel through one loop so a change to the loop -
     where the freshness flag is read, what counts as a step - cannot make the
-    evaluation of a policy differ from the training of it.
+    evaluation of a policy differ from the training of it. ``render`` is that
+    same kind of framing: it draws the run's window one frame per step, and is
+    false for a run that asked for none.
     """
     observation, _ = env.reset(seed=seed)
     total = 0.0
@@ -1421,6 +1424,8 @@ def _run_episode(
         observation = next_observation
         total += float(reward)
         steps += 1
+        if render:
+            env.render()
     return total, steps, losses, _outcome(info)
 
 
@@ -1432,6 +1437,7 @@ def train(
     max_steps: int | None = None,
     seed: int | None = None,
     explore: bool = True,
+    render: bool = False,
     log: Callable[[str], Any] | None = print,
 ) -> dict[str, list]:
     """Run ``episodes`` training episodes and return what each one did.
@@ -1450,6 +1456,7 @@ def train(
             learn=True,
             seed=None if seed is None else int(seed) + episode,
             max_steps=max_steps,
+            render=render,
         )
         mean_loss = float(np.mean(losses)) if losses else float("nan")
         history["episode"].append(episode)
@@ -1474,6 +1481,7 @@ def play(
     max_steps: int | None = None,
     seed: int | None = None,
     device: str | None = None,
+    render: bool = False,
     log: Callable[[str], Any] | None = print,
 ) -> dict[str, list]:
     """Load the agent saved at ``path`` and run greedy episodes with it.
@@ -1496,6 +1504,7 @@ def play(
             learn=False,
             seed=None if seed is None else int(seed) + episode,
             max_steps=max_steps,
+            render=render,
         )
         history["episode"].append(episode)
         history["reward"].append(total)

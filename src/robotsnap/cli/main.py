@@ -13,6 +13,7 @@ import argparse
 import sys
 
 from robotsnap.cli.commands import COMMANDS
+from robotsnap.cli.launch_unity import add_launch_options
 
 
 def _add_commands(
@@ -36,6 +37,7 @@ def _add_commands(
             description=module.DESCRIPTION,
         )
         module.add_arguments(command)
+        add_launch_options(command)
         command.set_defaults(handler=module.run)
         registry[module.NAME] = command
         for alias in module.ALIASES:
@@ -96,4 +98,15 @@ def main(argv: list[str] | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     _apply_config(parser, arguments)
     args = parser.parse_args(arguments)
-    return args.handler(args)
+    from robotsnap.cli.launch_unity import launched_unity
+
+    try:
+        with launched_unity(args):
+            return args.handler(args)
+    except KeyboardInterrupt:
+        # Ctrl-C is how a run is ended early, not a crash: every ``finally``
+        # between here and the step that was interrupted has already run, so
+        # the simulation is stopped and the application the run started is
+        # closed. What is left is to say so and use the shell's own code.
+        print("interrupted", file=sys.stderr)
+        return 130

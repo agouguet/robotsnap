@@ -1,8 +1,8 @@
 # RobotSNAP <-> Python contract
 
 Reference for the Python-side bridge. Everything below is read from the Unity
-project at `/home/adam/robotsnap-unity` (branch `main`). Component names point at the
-Unity sources.
+project at `/home/adam/robotsnap-workspace/robotsnap-unity` (branch `main`).
+Component names point at the Unity sources.
 
 ## Topology
 
@@ -206,9 +206,16 @@ A `humans` entry is:
  "controller": "sfm", "end_behavior": "loop"}
 ```
 
-`goal` and `group` may be `null`, `controller` is `sfm` or `external`, and
-`end_behavior` is what the agent does when its route runs out: `stay`,
-`disappear` or `loop`.
+`goal` and `group` may be `null`, `controller` is `sfm`, `external`, `manual`
+or `replay`, and `end_behavior` is what the agent does when its route runs out:
+`stay`, `disappear` or `loop`. `manual` is a pedestrian driven by the keyboard
+of the machine running the simulator: an operator takes the pedestrian the
+camera follows with the grab key, and its velocity then travels the same
+channel as `external` - so the two are one contract with a different driver,
+and a reader can tell them apart. `replay` is set from the Analysis tab, which
+re-applies a past episode's scenario and walks its humans along the recorded
+motion instead of the social forces; there is no command for it, because the
+tracks travel with the episode rather than on the wire.
 
 Poses are in the ROS frame (x forward, y left, z up), yaw in radians; the
 **world-axis** `x`/`z` of the scenario editor is not what these publish.
@@ -318,7 +325,7 @@ The body always carries a `command` key plus the keys that command needs.
 | `clear_robot_goal` | none |
 | `stop_robot` | none |
 | `set_control_mode` | `mode`: `keyboard`, `ros`, `hybrid` or `scenario` |
-| `set_agent_controller` | `mode`: `sfm` or `external` |
+| `set_agent_controller` | `mode`: `sfm`, `external` or `manual` |
 | `humans` | `commands`: one entry per human, see below |
 
 The optional keys are omitted from the body when Python has no value for them,

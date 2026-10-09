@@ -2,18 +2,28 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
-
-from robotsnap import scenario
 
 from robotsnap.runs.presets import training_fields
 from robotsnap.runs.session import (
     _announce,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
+
+
+def _viewer_step(environment: Any) -> Callable[[int, float], None]:
+    """The per-step hook that draws the window, for a run that asked for one.
+
+    ``play`` walks its episodes itself and never calls ``render``, so a played
+    back SB3 checkpoint with ``--viewer`` would ask for a window that nothing
+    opens. Its own per-step callback is the seam, exactly as the training
+    callback is for ``learn``.
+    """
+    return lambda steps, total: environment.render()
 
 
 def run_sb3_policy(
@@ -107,11 +117,15 @@ def run_sb3_policy(
     try:
         environment.reset()
         started = True
+        # ``play`` walks the episode itself, so the window is pumped from its own
+        # per-step seam rather than from a callback Stable-Baselines3 would own.
+        on_step = None if not render else _viewer_step(environment)
         history = sb3_support.play(
             load,
             environment,
             episodes=int(episodes),
             algo=algo,
+            on_step=on_step,
         )
         for record in history:
             print(
@@ -125,4 +139,4 @@ def run_sb3_policy(
         _stop_session(environment, stop and started)
         environment.close()
         if not keep:
-            scenario.delete(scenario_id, directory=directory)
+            _remove_scratch_scenario(environment, scenario_id, directory)

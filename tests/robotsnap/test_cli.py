@@ -307,6 +307,10 @@ def test_training_takes_lockstep_and_inference_runs_free(monkeypatch):
     monkeypatch.setattr(runs, "run_training", fake)
     monkeypatch.setattr(runs, "run_policy_episodes", fake)
     monkeypatch.setattr(runs, "run_random_episode", fake)
+    # Which reader a checkpoint needs is read from the file itself, and this
+    # test is about the pacing flags: give it an answer instead of a file that
+    # has to exist somewhere in the working directory.
+    monkeypatch.setattr(runs, "_checkpoint_kind", lambda path: "torch")
 
     assert cli.main(["train", "--episodes", "1"]) == 0
     assert captured["pacing"] == "lockstep"
@@ -851,6 +855,7 @@ def test_play_forwards_the_checkpoint_the_episodes_and_the_flags(monkeypatch):
         return 0
 
     monkeypatch.setattr(runs, "run_policy_episodes", fake)
+    monkeypatch.setattr(runs, "_checkpoint_kind", lambda path: "torch")
     code = cli.main(
         ["play", "--load", "policy.pt", "--episodes", "3", "--sample", "--no-stop"]
     )
@@ -870,6 +875,7 @@ def test_play_aliases_to_infer(monkeypatch):
         return 0
 
     monkeypatch.setattr(runs, "run_policy_episodes", fake)
+    monkeypatch.setattr(runs, "_checkpoint_kind", lambda path: "torch")
     assert cli.main(["infer", "--load", "policy.pt"]) == 0
     assert captured["load"] == "policy.pt"
 

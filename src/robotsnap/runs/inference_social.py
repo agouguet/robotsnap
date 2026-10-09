@@ -6,12 +6,11 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from robotsnap import scenario
-
 from robotsnap.runs.presets import training_fields
 from robotsnap.runs.session import (
     _announce,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
@@ -124,7 +123,9 @@ def run_social_policy(
     try:
         environment.reset()
         started = True
-        history = social_play(load, environment, episodes=int(episodes), log=print)
+        history = social_play(
+            load, environment, episodes=int(episodes), render=render, log=print
+        )
         for index, outcome in enumerate(history.get("outcome", [])):
             print(f"episode {index + 1:3d} | outcome {outcome}")
         return 0
@@ -132,7 +133,7 @@ def run_social_policy(
         _stop_session(environment, stop and started)
         environment.close()
         if not keep:
-            scenario.delete(scenario_id, directory=directory)
+            _remove_scratch_scenario(environment, scenario_id, directory)
 
 
 def social_checkpoint_algorithm(path: str | Path) -> str:

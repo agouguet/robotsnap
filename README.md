@@ -35,6 +35,11 @@ python -m robotsnap bridge --port 10000     # then press Play in Unity
 python -m robotsnap goal --episodes 3       # a sanity check: drive to the goal
 ```
 
+One flag starts the application for you and closes it again when the run ends:
+`python -m robotsnap train --launch --headless --viewer` opens Unity, trains,
+and stops the simulation and the app on Ctrl-C. See
+[docs/manual.md](docs/manual.md) for `--unity-app` and the discovery order.
+
 ## Train a policy (reinforcement learning)
 
 One flag picks the learning rule, one command trains it, and the same
@@ -43,15 +48,18 @@ the package also ships its own small PyTorch loop.
 
 ```bash
 # a continuous-action rule over the plain environment
-python -m robotsnap train --algo ppo --timesteps 200000 --save ppo_social.zip
+python -m robotsnap train --algo ppo --timesteps 200000
 
 # a named method of the literature: its own observation, actions and reward
-python -m robotsnap train --method cadrl --episodes 2000 --save cadrl.pt
+python -m robotsnap train --method cadrl --episodes 2000
 
-# replay it later, at real time, with the window
-python -m robotsnap play --load cadrl.pt --episodes 3 --render
+# each run prints the checkpoint it wrote; replay it later at real time
+python -m robotsnap play --load policy/cadrl-20261006-181500.pt --episodes 3 --render
 ```
 
+- Checkpoints go to `policy/`, named after the run and the moment, so two runs
+  never overwrite each other. `--save <path>` picks your own, `--no-save`
+  trains without writing one (see `policy/`).
 - Hyperparameters come from a file: `--config ppo`, `--config cadrl` (see
   `configs/`). A whole ladder of scenarios is available with `--curriculum`.
 - Training stops the simulation in Unity when it ends, exactly like the red

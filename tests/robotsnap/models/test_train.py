@@ -1,8 +1,9 @@
 """Tests for the shared trainer of ``robotsnap.models.social``.
 
-The trainer is duck-typed - it asks its environment to ``reset``, to ``step``
-and for nothing else - so the loop that trains a policy can be checked here
-against a stand-in environment, without Unity and without a socket. What is
+The trainer is duck-typed - it asks its environment to ``reset``, to ``step``,
+and to ``render`` when the run asked for a window - so the loop that trains a
+policy can be checked here against a stand-in environment, without Unity and
+without a socket. What is
 worth checking is exactly what a real run depends on: that every episode is
 logged, that the history lines up column for column, that a training episode
 writes to the replay buffer while a played-back one does not, and that a saved
@@ -33,8 +34,12 @@ class StubEnv:
         self.steps = int(steps)
         self.reward = float(reward)
         self.episodes = 0
+        self.frames = 0
         self._left = 0
         self._rng = np.random.default_rng(0)
+
+    def render(self):
+        self.frames += 1
 
     def reset(self, *, seed=None, options=None):
         self.episodes += 1
@@ -61,6 +66,17 @@ class StubEnv:
             "neighbours": self._rng.normal(size=(4, NEIGHBOUR_SIZE)).astype(np.float32),
             "mask": mask,
         }
+
+
+@pytest.mark.parametrize("asked", [False, True])
+def test_the_trainer_draws_the_window_only_when_the_run_asked_for_one(asked):
+    """One frame per step, and nothing at all for a run without a window."""
+    env = StubEnv(steps=4)
+    agent = CadrlAgent(actions=5, hidden=8, batch_size=4, seed=0)
+
+    train(env, agent, episodes=2, render=asked, log=None)
+
+    assert env.frames == (8 if asked else 0)
 
 
 @pytest.mark.parametrize("cls", [CadrlAgent, SarlAgent])

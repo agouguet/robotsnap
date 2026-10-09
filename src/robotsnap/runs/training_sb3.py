@@ -11,14 +11,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from robotsnap import scenario
-
 from robotsnap.runs.presets import training_fields
 from robotsnap.runs.session import (
     _apply_curriculum,
     _build_environment,
     _curriculum,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
@@ -49,6 +48,37 @@ def _curriculum_callback(plan: Any) -> Any:
             return True
 
     return _LogCurriculum()
+
+
+def _viewer_callback(environment: Any) -> Any:
+    """A Stable-Baselines3 callback that draws the window a run asked for.
+
+    SB3 drives the environment itself and never calls ``render``: a training run
+    with ``--viewer`` would ask for a window that nothing ever opens. This is the
+    seam the package's own loops already are - one frame per control step - and
+    the call costs nothing on an environment built without ``render_mode="human"``.
+    """
+    from stable_baselines3.common.callbacks import BaseCallback
+
+    class _DrawViewer(BaseCallback):
+        def _on_step(self) -> bool:
+            environment.render()
+            return True
+
+    return _DrawViewer()
+
+
+def _one_callback(callbacks: list[Any]) -> Any:
+    """The callbacks a run has to run each step, as the single one SB3 takes."""
+    present = [callback for callback in callbacks if callback is not None]
+    if not present:
+        return None
+    if len(present) == 1:
+        return present[0]
+
+    from stable_baselines3.common.callbacks import CallbackList
+
+    return CallbackList(present)
 
 
 def run_sb3_training(
@@ -211,7 +241,12 @@ def run_sb3_training(
             env=environment,
             policy_kwargs=tuned,
             algo_kwargs=algorithm_options,
-            callback=_curriculum_callback(plan),
+            callback=_one_callback(
+                [
+                    _curriculum_callback(plan),
+                    _viewer_callback(environment) if render else None,
+                ]
+            ),
         )
         if save:
             print(f"model written to {save}")
@@ -220,4 +255,4 @@ def run_sb3_training(
         _stop_session(environment, stop and started)
         environment.close()
         if not keep:
-            scenario.delete(scenario_id, directory=directory)
+            _remove_scratch_scenario(environment, scenario_id, directory)

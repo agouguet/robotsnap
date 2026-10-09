@@ -14,12 +14,11 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from robotsnap import scenario
-
 from robotsnap.runs.presets import training_fields
 from robotsnap.runs.session import (
     _announce,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
@@ -383,7 +382,7 @@ def run_scenarios(
         _stop_session(environment, stop and started)
         environment.close()
         if not keep:
-            scenario.delete(scenario_id, directory=directory)
+            _remove_scratch_scenario(environment, scenario_id, directory)
 
     _print_campaign(document)
     if out:

@@ -836,8 +836,10 @@ class RobotSNAPClient:
     def set_agent_controller(self, mode: str) -> dict[str, Any] | None:
         """Switch the humans' controller (``{"command": "set_agent_controller"}``).
 
-        ``mode`` is ``"sfm"`` or ``"external"``, matching the ``controller``
-        field of :meth:`humans`.
+        ``mode`` is ``"sfm"``, ``"external"`` or ``"manual"``, matching the
+        ``controller`` field of :meth:`humans`. ``"manual"`` hands the crowd to
+        the keyboard of the machine running the simulator; an operator can then
+        take a single pedestrian by hand in the application.
         """
         return self._send_command(
             {"command": "set_agent_controller", "mode": str(mode)}

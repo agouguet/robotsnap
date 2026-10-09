@@ -11,7 +11,6 @@ import sys
 from collections.abc import Mapping
 from typing import Any
 
-from robotsnap import scenario
 from robotsnap.rl import policy
 
 from robotsnap.runs.presets import training_fields
@@ -21,6 +20,7 @@ from robotsnap.runs.session import (
     _apply_curriculum,
     _curriculum,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
@@ -39,7 +39,7 @@ def run_training(
     control_period: float = 0.2,
     time_scale: float | None = None,
     pacing: str = "free",
-    scenario_id: str = "python_train_demo",
+    scenario_id: str = "default",
     scenario_fields: Mapping[str, Any] | None = None,
     client: Any = None,
     port: int = 10000,
@@ -210,7 +210,7 @@ def run_training(
         _stop_session(environment, stop and started)
         environment.close()
         if not keep:
-            scenario.delete(scenario_id, directory=directory)
+            _remove_scratch_scenario(environment, scenario_id, directory)
 
 
 def _reinforce_components():

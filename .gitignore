@@ -17,6 +17,13 @@ legacy/human_traj_prediction/env/
 *.onnx.data
 cadrl.zip
 
+# Learned policies. The directory ships with the repository - train writes into
+# it by default - but the checkpoints themselves are run output, not sources.
+/policy/*.pt
+/policy/*.pth
+/policy/*.zip
+/policy/*.onnx
+
 # Datasets (kept on disk, not versioned)
 legacy/human_traj_prediction/data/eth_ucy/
 legacy/human_traj_prediction/data/european/

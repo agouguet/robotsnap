@@ -194,6 +194,17 @@ def test_delete_removes_the_file_and_says_so(tmp_path):
     assert scenario.list_names(tmp_path) == []
 
 
+def test_find_names_the_file_an_id_is_stored_in(tmp_path):
+    """An id and a file name are two spellings of one thing."""
+    scenario.write(_document(), name="demo", directory=tmp_path)
+
+    found = scenario.find("demo", tmp_path)
+    assert found == tmp_path / "demo.yaml"
+    assert found.is_file()
+    assert scenario.find("demo.yaml", tmp_path) == found
+    assert scenario.find("absent", tmp_path) is None
+
+
 def test_list_names_reads_both_extensions_and_sorts(tmp_path):
     (tmp_path / "b.yml").write_text("", encoding="utf-8")
     (tmp_path / "a.yaml").write_text("", encoding="utf-8")
@@ -305,11 +316,25 @@ def test_an_explicit_project_wins_over_the_environment(monkeypatch, tmp_path):
     assert scenario.unity_project(other) == other.resolve()
 
 
+def test_an_installed_applications_data_folder_is_a_project(tmp_path):
+    """A packaged player holds ``StreamingAssets`` itself, without ``Assets/``.
+
+    That data folder is what an installed application reads its scenarios and
+    maps from, so it is the folder a run has to be pointed at when the
+    application ships as a build rather than as the project.
+    """
+    data = tmp_path / "robotsnap-unity_Data"
+    (data / "StreamingAssets" / "Scenarios").mkdir(parents=True)
+
+    assert scenario.unity_project(data) == data.resolve()
+    assert scenario.scenarios_dir(data) == data.resolve() / "StreamingAssets" / "Scenarios"
+
+
 def test_a_directory_that_is_not_a_project_is_refused(monkeypatch, tmp_path):
     empty = tmp_path / "empty"
     empty.mkdir()
     monkeypatch.delenv(scenario.UNITY_PROJECT_ENV, raising=False)
-    monkeypatch.setattr(scenario, "_FALLBACK_PROJECT", tmp_path / "absent")
+    monkeypatch.setattr(scenario, "_FALLBACK_PROJECTS", (tmp_path / "absent",))
     monkeypatch.chdir(empty)
 
     with pytest.raises(FileNotFoundError):

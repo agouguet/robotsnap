@@ -10,8 +10,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from robotsnap import scenario
-
 from robotsnap.runs.controllers import _POLAR, _polar
 from robotsnap.runs.inference_torch import _action_count
 from robotsnap.runs.presets import training_fields
@@ -20,6 +18,7 @@ from robotsnap.runs.session import (
     _apply_curriculum,
     _curriculum,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
@@ -272,6 +271,7 @@ def run_social_training(
             episodes=int(episodes),
             max_steps=int(max_steps) or None,
             seed=seed,
+            render=render,
             log=log,
         )
         arrived = sum(1 for outcome in history["outcome"] if outcome == "goal")
@@ -283,4 +283,4 @@ def run_social_training(
         _stop_session(environment, stop and started)
         environment.close()
         if not keep:
-            scenario.delete(scenario_id, directory=directory)
+            _remove_scratch_scenario(environment, scenario_id, directory)

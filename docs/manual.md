@@ -37,6 +37,10 @@ same functions, so the two cannot drift apart.
 | `scenario` | write a scenario, launch it, drive it, freeze it |
 | `bench` | time N steps: simulated seconds against wall seconds |
 
+Every command also takes `--launch`: it starts the RobotSNAP application for
+the run and stops it when the run ends, so one command covers the whole stack
+(see *One command that starts everything* below).
+
 ```bash
 python -m robotsnap episode --port 10000 --observations "pose,goal"
 python -m robotsnap goal --episodes 3 --observation-structure dict
@@ -50,6 +54,59 @@ with `--observation-params` (a JSON object, for example
 `'{"lidar": {"bins": 24}}'`), and handed out either flat or as a dict of named
 arrays with `--observation-structure`.
 
+## One command that starts everything
+
+Unity is normally opened by hand and driven by a command that dials it. On a
+machine where the application is installed, one flag collapses the two steps:
+`--launch` starts the RobotSNAP player, points the bridge at it, and stops both
+when the run ends.
+
+```bash
+python -m robotsnap train --launch --headless --viewer --algo ppo \
+    --timesteps 200000 --time-scale 100 --save policy/ppo.zip
+```
+
+The player is discovered from `--unity-app` first, then `$ROBOTSNAP_UNITY_APP` -
+both name the player itself or a directory that holds it - then the layout the
+workspace installer writes (`$ROBOTSNAP_HOME/app/robotsnap-unity/<version>`, and
+the `~/robotsnap-workspace` clone beside the home directory), then the usual
+install prefixes (`~/.local/share/robotsnap-unity`,
+`~/.local/bin/robotsnap-unity`, `/opt/robotsnap-unity`, ...), then the `PATH`,
+and finally the source project's own `Builds/`. A path named on the command line
+is an instruction: when it holds no player the run stops with that path in the
+message instead of quietly starting another install.
+
+An installed application reads its scenarios from the data folder beside its
+executable, not from the source project, so a run started with `--launch` reads
+and writes them there: the scenarios the application ships are used as they
+stand rather than written over, and `--unity-project` still overrides the folder
+when the caller knows which one the session reads. An installation that cannot
+be written to - a system-wide one under `/opt`, say - can only play the
+scenarios it already ships, and a run that asks for another name is refused
+before the session opens, with the folder that refused it; name one of the
+scenarios it ships (`--scenario default`) or install the application under your
+home, where the folder belongs to you, and every scenario works.
+
+That is also why an edit made in the editor does not show up in a run started
+with `--launch`: the editor reads the project's `Assets/StreamingAssets`, and a
+built player reads the copy baked into its own data folder. Refreshing the
+build (`setup-workspace.sh --build-unity`) is what puts the edit in the copy the
+player reads; until then the run says so before it starts, as
+`scenario note : the player reads <the player's file>, not the project's
+<the project's file>`.
+
+`--headless` starts the player with `-batchmode -nographics` : no window and
+much faster, and still driveable over ssh. Pair it with `--viewer` to watch the
+run in the package's own 2D window, and with `--unity-log PATH` to say where the
+player writes its log - a temporary file by default when `--headless`. A player
+that exits while starting is reported right away, with the last lines of that
+log, rather than after the run's wait timeout.
+
+Stopping the command with Ctrl-C (or a `SIGTERM`) stops the run, puts the
+simulation back in standby, and closes the application it started. Every
+sub-command takes `--launch`, so the same flag drives `play`, `bench` and
+`benchmark` too.
+
 ## Load a policy
 
 A training run writes a checkpoint that carries everything needed to play it
@@ -59,9 +116,19 @@ it does not have to guess them. `play` reads the checkpoint and drives the
 session without training:
 
 ```bash
-python -m robotsnap train --episodes 20 --save policy.pt
-python -m robotsnap play --load policy.pt --episodes 3 --render
+python -m robotsnap train --episodes 20
+# weights written to policy/reinforce-20261006-181500.pt
+
+python -m robotsnap play --load policy/reinforce-20261006-181500.pt --episodes 3 --render
 ```
+
+`train` writes into `policy/` when the line does not say where, under a name
+that carries the run and the moment, so two runs of the same command never
+overwrite each other and every run prints the file it wrote. A path still wins:
+`--save runs/today.zip` writes exactly there, and `--save policy/` generates a
+name in that directory. `--no-save` trains without writing a checkpoint. The
+suffix is the writer's own - `.pt` for this package's trainers, `.zip` for
+Stable-Baselines3 - and `policy/README.md` has the whole rule.
 
 The action is the mean of the policy unless `--sample` asks for a draw from it.
 `play` and `train` stop the simulation in Unity once they end, exactly as the
@@ -234,10 +301,10 @@ from this:
 # Train as fast as the machine allows, with a control period that is still a
 # period: every step is 2 s of world time, and the episode budget is exact.
 python -m robotsnap train --episodes 200 --control-period 2 --pacing lockstep \
-    --time-scale 100 --seconds 120 --save policy.pt
+    --time-scale 100 --seconds 120 --save policy/fast.pt
 
 # Watch the result at real time.
-python -m robotsnap play --load policy.pt --control-period 0.2 --time-scale 1 \
+python -m robotsnap play --load policy/fast.pt --control-period 0.2 --time-scale 1 \
     --pacing lockstep --render
 ```
 
@@ -264,11 +331,12 @@ long run:
 
 ```bash
 /home/adam/Unity/Hub/Editor/6000.4.4f1/Editor/Unity -batchmode -nographics \
-    -projectPath /home/adam/robotsnap-unity -logFile /tmp/unity_headless.log &
+    -projectPath /home/adam/robotsnap-workspace/robotsnap-unity \
+    -logFile /tmp/unity_headless.log &
 
 # then, once `unity status` reports it ready, drive it exactly as usual
 python -m robotsnap train --algo ppo --timesteps 200000 --control-period 2 \
-    --time-scale 100 --pacing lockstep --save ppo.zip
+    --time-scale 100 --pacing lockstep --save policy/ppo.zip
 ```
 
 The same session can also be opened normally and driven from Python; the two
@@ -300,20 +368,21 @@ feeds all of them:
 
 ```bash
 # a continuous-action algorithm as it stands
-python -m robotsnap train --algo ppo --timesteps 200000 --save ppo.zip
+python -m robotsnap train --algo ppo --timesteps 200000 --save policy/ppo.zip
 # a value-based one, which needs the discrete command set
-python -m robotsnap train --algo dqn --timesteps 50000 --save dqn.zip
+python -m robotsnap train --algo dqn --timesteps 50000 --save policy/dqn.zip
 # a named method: its own observation, action set, reward and policy, all in
 # robotsnap/models/<method>.py - including the `template` a new one is copied from
-python -m robotsnap train --method cadrl --episodes 2000 --save cadrl.pt
-python -m robotsnap train --method sarl  --episodes 2000 --save sarl.pt
-python -m robotsnap train --method ga3c_cadrl --episodes 2000 --save ga3c_cadrl.pt
-python -m robotsnap train --method rgl   --episodes 2000 --save rgl.pt
+python -m robotsnap train --method cadrl --episodes 2000 --save policy/cadrl.pt
+python -m robotsnap train --method sarl  --episodes 2000 --save policy/sarl.pt
+python -m robotsnap train --method ga3c_cadrl --episodes 2000 --save policy/ga3c_cadrl.pt
+python -m robotsnap train --method rgl   --episodes 2000 --save policy/rgl.pt
+# nothing named: the run writes policy/template-<stamp>.pt and says so
 python -m robotsnap train --method template --episodes 200
 
 # replay, whichever of the three wrote the file: the checkpoint says so itself
-python -m robotsnap play --load ppo.zip --episodes 3
-python -m robotsnap play --load cadrl.pt --episodes 3
+python -m robotsnap play --load policy/ppo.zip --episodes 3
+python -m robotsnap play --load policy/cadrl.pt --episodes 3
 ```
 
 `--observations` chooses what the policy sees, so the same algorithm is trained
@@ -369,7 +438,7 @@ window clears a threshold - whichever comes first:
 
 ```bash
 python -m robotsnap train --algo ppo --timesteps 300000 \
-    --curriculum social_navigation --save ppo_social.zip
+    --curriculum social_navigation --save policy/ppo_social.zip
 ```
 
 `configs/curriculum/social_navigation.yaml` is the worked ladder: an empty map,
@@ -584,9 +653,9 @@ python -m robotsnap.bridge --host 0.0.0.0 --port 10000   # another machine dials
 python -m robotsnap bridge --ros2 --port 10000
 
 # hyperparameters from a file, and a ladder of scenarios to train on
-python -m robotsnap train --config ppo --timesteps 200000 --save ppo.zip
+python -m robotsnap train --config ppo --timesteps 200000 --save policy/ppo.zip
 python -m robotsnap train --algo ppo --timesteps 300000 \
-    --curriculum social_navigation --save ppo_social.zip
+    --curriculum social_navigation --save policy/ppo_social.zip
 
 # a suite of scenarios, N episodes each, and the comparison of two campaigns
 python -m robotsnap benchmark --suite basic --episodes 5 --out results/goal.json

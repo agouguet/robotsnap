@@ -67,6 +67,31 @@ def test_reset_hands_the_stage_options_to_the_environment():
     assert env.env.resets[0] == {"scenario": "default", "launch": True}
 
 
+def test_the_wrapper_does_not_hide_the_environment_it_wraps():
+    """A run reads the session off the environment it was handed.
+
+    ``_stop_session`` needs ``client``, the announcement needs the observation
+    names, and a curriculum sits between the two: whatever the wrapper does not
+    own has to reach the environment underneath, or stopping a curriculum run
+    ends in an ``AttributeError`` instead of the message it was going to print.
+    """
+    inner = FakeEnv()
+    inner.client = object()
+    inner.observation_names = ("pose", "goal")
+    env = CurriculumEnv(inner, _ladder())
+
+    assert env.client is inner.client
+    assert env.observation_names == ("pose", "goal")
+
+
+def test_a_private_name_stays_the_wrappers_own():
+    """``_something`` is not forwarded: that is how a wrapper recurses into itself."""
+    env = CurriculumEnv(FakeEnv(), _ladder())
+
+    with pytest.raises(AttributeError):
+        env._definitely_not_on_the_environment
+
+
 def test_caller_options_win_over_the_stage_defaults():
     env = CurriculumEnv(FakeEnv(), _ladder())
     env.reset(options={"scenario": "special"})

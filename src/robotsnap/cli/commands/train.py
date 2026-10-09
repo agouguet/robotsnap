@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from robotsnap import runs
+from robotsnap import policy_files, runs
 from robotsnap.cli.options import (
     _add_bridge_options,
     _add_config_option,
@@ -30,7 +30,7 @@ DESCRIPTION = (
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    _add_bridge_options(parser, scenario="python_train_demo")
+    _add_bridge_options(parser, scenario="default")
     _add_config_option(parser)
     # Training and inference are the two runs where a control period has to mean
     # something: the episode budget is counted in the world's seconds, and a
@@ -87,7 +87,26 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--seconds", type=float, default=120.0, help="budget of one episode, in world seconds"
     )
-    parser.add_argument("--save", default=None, help="path to write the weights to")
+    # A run writes a checkpoint when it ends, so where it goes is a decision
+    # with a default rather than an extra step: the policy directory, under a
+    # name that says which run wrote it and when. A path still wins, and
+    # --no-save is how a smoke test trains without leaving a file behind.
+    save = parser.add_mutually_exclusive_group()
+    save.add_argument(
+        "--save",
+        default=None,
+        metavar="PATH",
+        help=(
+            "where to write the learned policy: a file, or a directory that "
+            "receives a generated name (default: %s/, named after the run and "
+            "the moment)" % policy_files.DEFAULT_DIRECTORY_NAME
+        ),
+    )
+    save.add_argument(
+        "--no-save",
+        action="store_true",
+        help="train without writing a checkpoint",
+    )
     parser.add_argument(
         "--load", default=None, help="checkpoint to resume training from"
     )
@@ -99,6 +118,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 
 def run(args: argparse.Namespace) -> int:
     algorithm, method = _resolve_method(args, default_algorithm="reinforce")
+    # Resolved here rather than in each trainer: the file name has to say which
+    # method or which rule wrote it, and only this function knows both.
+    save = None if args.no_save else policy_files.resolve_save_path(
+        args.save,
+        label=method or algorithm,
+        suffix=policy_files.suffix_for(algorithm=algorithm, method=method),
+    )
     if method is not None:
         return runs.run_social_training(
             algo=method,
@@ -112,7 +138,7 @@ def run(args: argparse.Namespace) -> int:
             port=args.port,
             host=args.host,
             unity_project=args.unity_project,
-            save=args.save,
+            save=save,
             load=args.load,
             render=args.render,
             keep=args.keep,
@@ -139,7 +165,7 @@ def run(args: argparse.Namespace) -> int:
             port=args.port,
             host=args.host,
             unity_project=args.unity_project,
-            save=args.save,
+            save=save,
             load=args.load,
             render=args.render,
             keep=args.keep,
@@ -164,7 +190,7 @@ def run(args: argparse.Namespace) -> int:
         hidden=args.hidden,
         entropy=args.entropy,
         max_steps=args.max_steps,
-        save=args.save,
+        save=save,
         load=args.load,
         render=args.render,
         keep=args.keep,

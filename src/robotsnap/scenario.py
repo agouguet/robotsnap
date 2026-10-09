@@ -60,6 +60,7 @@ __all__ = [
     "build",
     "to_yaml",
     "write",
+    "find",
     "list_names",
     "delete",
 ]
@@ -72,7 +73,13 @@ SCENARIOS_FOLDER = "Scenarios"
 ROBOT_TYPES = ("bibus", "freight", "ginger", "jackal", "kuri")
 
 #: Last candidate tried when nothing else is given: the checkout beside the home.
-_FALLBACK_PROJECT = Path.home() / "robotsnap-unity"
+#: Where this machine's checkout usually is: the workspace layout first, then a
+#: checkout directly under the home directory. A candidate that does not hold
+#: ``Assets/StreamingAssets`` is skipped, so a stale one costs nothing.
+_FALLBACK_PROJECTS: tuple[Path, ...] = (
+    Path.home() / "robotsnap-workspace" / "robotsnap-unity",
+    Path.home() / "robotsnap-unity",
+)
 
 _SCENARIO_EXTENSIONS = (".yaml", ".yml")
 
@@ -81,12 +88,15 @@ _SCENARIO_EXTENSIONS = (".yaml", ".yml")
 
 
 def unity_project(path: str | os.PathLike[str] | None = None) -> Path:
-    """Return the Unity project directory holding ``Assets/StreamingAssets``.
+    """Return the directory holding the ``StreamingAssets`` a session reads.
 
     The order is: an explicit ``path``, then ``$ROBOTSNAP_UNITY_PROJECT``, then
-    the current working directory and this machine's checkout. A candidate only
-    counts when it carries ``Assets/StreamingAssets``, which is what says a
-    directory is the Unity project rather than a directory named like one.
+    the current working directory and this machine's checkout. A candidate
+    counts when it carries ``StreamingAssets``, which is what says a directory
+    is one the application reads rather than a directory named like one, and
+    there are two layouts to carry it: the source project's
+    ``Assets/StreamingAssets``, and the data folder of an installed application,
+    which holds ``StreamingAssets`` itself.
     """
     candidates: list[Path] = []
     if path is not None:
@@ -94,16 +104,16 @@ def unity_project(path: str | os.PathLike[str] | None = None) -> Path:
     if os.environ.get(UNITY_PROJECT_ENV):
         candidates.append(Path(os.environ[UNITY_PROJECT_ENV]))
     candidates.append(Path.cwd())
-    candidates.append(_FALLBACK_PROJECT)
+    candidates.extend(_FALLBACK_PROJECTS)
 
     for candidate in candidates:
         project = Path(candidate).expanduser()
-        if (project / "Assets" / "StreamingAssets").is_dir():
+        if _streaming_assets(project) is not None:
             return project.resolve()
 
     raise FileNotFoundError(
         "no Unity project found: pass one, or set "
-        f"{UNITY_PROJECT_ENV} to a directory holding Assets/StreamingAssets"
+        f"{UNITY_PROJECT_ENV} to a directory holding StreamingAssets"
     )
 
 
@@ -112,7 +122,25 @@ def scenarios_dir(
     folder: str = SCENARIOS_FOLDER,
 ) -> Path:
     """Return the directory a scenario file has to be written to."""
-    return unity_project(project) / "Assets" / "StreamingAssets" / folder
+    streaming = _streaming_assets(unity_project(project))
+    # ``unity_project`` only answers a directory that carries one.
+    assert streaming is not None
+    return streaming / folder
+
+
+def _streaming_assets(project: Path) -> Path | None:
+    """The ``StreamingAssets`` folder of ``project``, in either layout.
+
+    A source project keeps it under ``Assets/``; the data folder of a packaged
+    player - what an installed RobotSNAP application ships beside its own
+    executable - holds it directly. The application reads its scenarios and
+    maps from that folder whichever it is, so both count as a project here.
+    """
+    for relative in (("Assets", "StreamingAssets"), ("StreamingAssets",)):
+        folder = project.joinpath(*relative)
+        if folder.is_dir():
+            return folder
+    return None
 
 
 # -- authoring one document --------------------------------------------------
@@ -669,11 +697,27 @@ def delete(
     directory: str | os.PathLike[str] | None = None,
 ) -> bool:
     """Remove a scenario file, and say whether one was there to remove."""
+    path = find(name, directory)
+    if path is None:
+        return False
+    path.unlink()
+    return True
+
+
+def find(
+    name: str,
+    directory: str | os.PathLike[str] | None = None,
+) -> Path | None:
+    """The file a scenario id is stored in, or ``None`` when there is none.
+
+    An id and a file name are two spellings of the same thing - the file is the
+    id under one of the extensions the application reads - so the pairing is
+    written once, here, and everything else asks this.
+    """
     stem = _file_stem(name)
     target_dir = Path(directory) if directory is not None else scenarios_dir()
     for extension in _SCENARIO_EXTENSIONS:
         path = target_dir / f"{stem}{extension}"
         if path.is_file():
-            path.unlink()
-            return True
-    return False
+            return path
+    return None

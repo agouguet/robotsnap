@@ -7,13 +7,12 @@ import time
 from collections.abc import Mapping
 from typing import Any
 
-from robotsnap import scenario
-
 from robotsnap.runs.presets import bench_fields
 from robotsnap.runs.session import (
     _announce,
     _announce_session,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
@@ -132,5 +131,5 @@ def run_benchmark(
         _stop_session(environment, stop)
         environment.close()
         if not keep:
-            removed = scenario.delete(scenario_id, directory=directory)
+            removed = _remove_scratch_scenario(environment, scenario_id, directory)
             print(f"scenario removed : {removed}")

@@ -9,14 +9,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from robotsnap import scenario
-
 from robotsnap.runs.controllers import go_to_goal
 from robotsnap.runs.presets import random_episode_fields, social_fields
 from robotsnap.runs.session import (
     _announce,
     _announce_session,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
@@ -151,7 +150,7 @@ def run_random_episode(
         _stop_session(environment, stop)
         environment.close()
         if not keep:
-            removed = scenario.delete(scenario_id, directory=directory)
+            removed = _remove_scratch_scenario(environment, scenario_id, directory)
             print(f"scenario removed : {removed}")
 
 
@@ -310,7 +309,7 @@ def run_goal_episode(
         _stop_session(environment, stop)
         environment.close()
         if not keep:
-            scenario.delete(scenario_id, directory=directory)
+            _remove_scratch_scenario(environment, scenario_id, directory)
 
     if outcomes:
         reached = outcomes.count("goal reached")

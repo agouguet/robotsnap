@@ -11,7 +11,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from robotsnap import scenario
 from robotsnap.rl import policy
 
 from robotsnap.runs.episodes import _outcome
@@ -20,6 +19,7 @@ from robotsnap.runs.session import (
     _announce,
     _announce_session,
     _environment_options,
+    _remove_scratch_scenario,
     _scenario_directory,
     _stop_session,
 )
@@ -183,7 +183,7 @@ def run_policy_episodes(
         _stop_session(environment, stop and started)
         environment.close()
         if not keep:
-            scenario.delete(scenario_id, directory=directory)
+            _remove_scratch_scenario(environment, scenario_id, directory)
 
     if outcomes:
         reached = outcomes.count("goal reached")
